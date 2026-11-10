@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mandarin Reader</title>
+<style>
+  :root { --paper:#F2F0E6; --raised:#FBFAF5; --ink:#22252B; --seal:#B23A2E; --muted:#565B66; --jade:#4F7566; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,"Segoe UI",sans-serif; display:flex; align-items:center; justify-content:center;
+    padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom)); }
+  .card { width:100%; max-width:460px; background:var(--raised); border:1px solid #0001; border-radius:16px; padding:28px; }
+  .seal { width:64px; height:64px; border-radius:12px; background:var(--seal); color:var(--paper);
+    display:flex; align-items:center; justify-content:center; font:700 38px "Songti SC","Noto Serif SC",serif; margin-bottom:16px; }
+  h1 { margin:0 0 4px; font-size:22px; } p.sub { margin:0 0 20px; color:var(--muted); font-size:14px; }
+  label { display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+  input { width:100%; padding:12px; font-size:16px; border:1px solid #0003; border-radius:10px; background:#fff; color:var(--ink); }
+  .row { display:flex; gap:10px; margin-top:20px; }
+  button { flex:1; padding:13px; font-size:16px; font-weight:600; border-radius:10px; border:1px solid var(--seal);
+    background:var(--seal); color:#fff; } button.ghost { background:transparent; color:var(--seal); }
+  #msg { margin-top:14px; font-size:14px; min-height:20px; color:var(--muted); } #msg.err{color:var(--seal);} #msg.ok{color:var(--jade);}
+  .hint { font-size:12px; color:var(--muted); margin-top:18px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="seal">读</div>
+  <h1>Mandarin Reader</h1>
+  <p class="sub">Connect to your server</p>
+  <label for="url">Server address</label>
+  <input id="url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false"
+         placeholder="https://mandarin.vonos.space or 192.168.1.10:8083">
+  <div class="row">
+    <button class="ghost" id="test">Test</button>
+    <button id="go">Connect</button>
+  </div>
+  <div id="msg"></div>
+  <div class="hint">Include the port for a local address (e.g. 100.79.108.4:8083). The address is saved on this iPad.
+  AI model settings live inside the app under Settings &rarr; AI (Ollama).</div>
+</div>
+<script>
+const KEY = 'mr_server_url';
+const $ = id => document.getElementById(id);
+const msg = (t, c) => { $('msg').textContent = t; $('msg').className = c || ''; };
+const get = () => { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } };
+const set = v => { try { localStorage.setItem(KEY, v); } catch (e) {} };
+
+function normalize(v) {
+  v = v.trim().replace(/\/+$/, '');
+  if (!v) return '';
+  if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+  return v;
+}
+async function check(url) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 6000);
+  try {
+    const r = await fetch(url + '/login', { signal: ctl.signal, mode: 'no-cors' });
+    return true;
+  } catch (e) { return false; } finally { clearTimeout(t); }
+}
+async function connect(auto) {
+  const url = normalize($('url').value);
+  if (!url) { msg('Enter a server address.', 'err'); return; }
+  msg('Connecting...');
+  if (!(await check(url))) { msg('Could not reach ' + url + '. Check the address, port and that the server is online.', 'err'); return; }
+  set(url);
+  location.href = url + '/dashboard';
+}
+$('go').onclick = () => connect(false);
+$('test').onclick = async () => {
+  const url = normalize($('url').value);
+  if (!url) { msg('Enter a server address.', 'err'); return; }
+  msg('Testing...');
+  (await check(url)) ? msg('Server reachable.', 'ok') : msg('Could not reach ' + url, 'err');
+};
+$('url').addEventListener('keydown', e => { if (e.key === 'Enter') connect(false); });
+
+const saved = get();
+$('url').value = saved;
+if (saved && !/[?&]change=1/.test(location.search)) connect(true);
+</script>
+</body>
+</html>

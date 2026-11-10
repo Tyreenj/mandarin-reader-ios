@@ -1,0 +1,13 @@
+{
+  "appId": "space.vonos.mandarinreader",
+  "appName": "Mandarin Reader",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "appendUserAgent": "MandarinReaderApp",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "server": {
+    "allowNavigation": ["*"]
+  }
+}
