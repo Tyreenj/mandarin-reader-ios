@@ -17,7 +17,9 @@ workflows:
         script: npx cap sync ios
       - name: Build unsigned app
         script: |
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+          ls ios/App
+          if [ -d ios/App/App.xcworkspace ]; then TARGET="-workspace ios/App/App.xcworkspace"; else TARGET="-project ios/App/App.xcodeproj"; fi
+          xcodebuild $TARGET -scheme App -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             clean build
